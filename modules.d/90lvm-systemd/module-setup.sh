@@ -67,12 +67,14 @@ install() {
         [[ $_lvmconf ]] && printf "%s\n" "$_lvmconf" >> "${initdir}/etc/cmdline.d/90lvm.conf"
     fi
 
+    inst_script "$moddir/pvscan-udev-initrd.sh" "$udevdir"/pvscan-udev-initrd.sh
+
+    inst_rules "$moddir/64-lvm-systemd.rules"
+
     inst_hook cmdline 30 "$moddir/parse-lvm.sh"
 
     inst_multiple -o \
-        "$udevdir"/pvscan-udev-initrd.sh \
         "$udevrulesdir"/11-dm-lvm.rules \
-        "$udevrulesdir"/64-lvm.rules \
         cache_dump cache_restore cache_check cache_repair \
         era_check era_dump era_invalidate era_restore lvm \
         thin_dump thin_restore thin_check thin_repair
@@ -88,4 +90,11 @@ install() {
             /etc/lvm/lvmlocal.conf
     fi
 
+    eval $(lvm dumpconfig global/system_id_source &>/dev/null)
+    if [ "$system_id_source" == "file" ]; then
+        eval $(lvm dumpconfig global/system_id_file)
+        if [ -f "$system_id_file" ]; then
+            inst_simple -H $system_id_file
+        fi
+    fi
 }
